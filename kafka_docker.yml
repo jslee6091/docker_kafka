@@ -1,0 +1,87 @@
+version: '2.1'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      my-network:
+        ipv4_address: 172.20.0.100
+    healthcheck:
+      test: "exit 0"
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 172.20.0.101
+      KAFKA_CREATE_TOPICS: "my_topic_users:1:1, my_topic_store:1:1, my_topic_orders:1:1, my_topic_order_detail:1:1, my_topic_menu:1:1, my_topic_festival:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      zookeeper:
+        condition: service_started
+    networks:
+      my-network:
+        ipv4_address: 172.20.0.101
+    healthcheck:
+      test: "exit 0"
+  mysql:
+    image: mysql:5.7
+    ports:
+      - 13306:3306
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_DATABASE: mydb
+      LC_ALL: C.UTF-8
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    networks:
+      my-network:
+        ipv4_address: 172.20.0.2
+    healthcheck:
+      test: "exit 0"
+  mysql2:
+    image: mysql:5.7
+    ports:
+      - 23306:3306
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_DATABASE: mydb
+      LC_ALL: C.UTF-8
+    volumes:
+      - ./mysql-data2:/var/lib/mysql
+    networks:
+      my-network:
+        ipv4_address: 172.20.0.3
+    healthcheck:
+      test: "exit 0"
+  kafka_producer:
+    image: jslee6091/kafka_pro:latest
+    networks:
+      my-network:
+        ipv4_address: 172.20.0.4
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+  kafka_consumer:
+    image: jslee6091/kafka_con:latest
+    networks:
+      my-network:
+        ipv4_address: 172.20.0.5
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      mysql2:
+        condition: service_healthy
+
+networks:
+  my-network:
+    name: project_network

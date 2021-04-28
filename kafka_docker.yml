@@ -30,7 +30,7 @@ services:
   mysql:
     image: mysql:5.7
     ports:
-      - 13306:3306
+      - 23306:3306
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "true"
       MYSQL_DATABASE: mydb
@@ -45,7 +45,7 @@ services:
   mysql2:
     image: mysql:5.7
     ports:
-      - 23306:3306
+      - 13306:3306
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "true"
       MYSQL_DATABASE: mydb
@@ -57,8 +57,8 @@ services:
         ipv4_address: 172.20.0.3
     healthcheck:
       test: "exit 0"
-  kafka_producer:
-    image: jslee6091/kafka_pro:latest
+  kafka_consumer:
+    image: jslee6091/kafka_con:latest
     networks:
       my-network:
         ipv4_address: 172.20.0.4
@@ -67,19 +67,31 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-      mysql:
+      mysql2:
         condition: service_healthy
-  kafka_consumer:
-    image: jslee6091/kafka_con:latest
-    networks:
+  api-msa:
+    container_name: api_service
+    image: janine0127/project_api:latest
+    ports:
+      - 16000:6000
+    networks: 
       my-network:
         ipv4_address: 172.20.0.5
     depends_on:
-      zookeeper:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
       mysql2:
+        condition: service_healthy
+  server-app:
+    restart: always
+    env_file: .env
+    container_name: web_server
+    image: project
+    ports:
+      - "5005:5005"
+    networks:
+      my-network:
+        ipv4_address: 172.20.0.6
+    depends_on:
+      mysql:
         condition: service_healthy
 
 networks:

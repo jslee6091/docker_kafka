@@ -86,6 +86,7 @@ def fetch_latest_orders(next_call_in):
     # users
     batch = consumer.poll(timeout_ms=100)
     if len(batch) > 0:
+        print('length of list batch values [0] : ', len(list(batch.values())[0]), 'and list batch values [0] : ', list(batch.values())[0])
         for message in list(batch.values())[0]:
             value = message.value.decode()
             value_dict = json.loads(value)
@@ -105,7 +106,9 @@ def fetch_latest_orders(next_call_in):
                         cursor.execute("DELETE FROM users WHERE user_category=%s AND email=%s AND user_name=%s AND phone_number=%s",
                                         [i[1], i[2], i[3], i[4]])
                         print(f'{i[1]}, {i[2]}, {i[3]}, {i[4]} users 삭제됨')
-    
+    batch.clear()
+    print('length of batch : ', len(batch), 'and batch values [0] : ', batch)
+
     # festival
     batch2 = consumer2.poll(timeout_ms=100)
     if len(batch2) > 0:
